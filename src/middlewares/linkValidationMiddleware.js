@@ -3,6 +3,7 @@ export async function shortUrlValidation(req,res,next){
     console.log('passando na validação')
     const {authorization} = req.headers
     const {url} = req.body
+    console.log(url)
     if(!url){
         res.sendStatus(422);
         return
@@ -29,17 +30,18 @@ export async function shortUrlValidation(req,res,next){
 
 export async function urlByIdValidation(req,res,next){
     const {id} = req.params
-    console.log(id)
     try{
         const {rows} = await connectionDB.query("SELECT * FROM urls WHERE id =$1",[id])
+        console.log(rows)
         if(rows.length===0){
             res.sendStatus(404)
             return
         }
     }
     catch(err){
-        res.status(422).send(err.message);
+        return res.status(422).send(err.message);
     }
+    console.log('passei daq')
     next()
 }
 
@@ -54,7 +56,7 @@ export async function goToUrlValidation(req,res,next){
         }
     }
     catch(err){
-        res.status(422).send(err.message);
+        return res.status(422).send(err.message);
     }
     next()
 }
@@ -90,7 +92,7 @@ export async function deleteUrlValidation(req,res,next){
         }
     }
     catch(err){
-        res.status(422).send(err.message);
+       return res.status(422).send(err.message);
     }
     next()
 }

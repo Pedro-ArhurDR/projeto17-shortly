@@ -3,9 +3,10 @@ import { connectionDB } from '../database/db.js';
 import bcrypt from "bcrypt"
 
 export async function signUpValidation(req,res,next){
-    const {email,password,confirmPassword} = req.body
+    const {name,email,password,confirmPassword} = req.body
 
-    if(password != confirmPassword){
+    if(password != confirmPassword||!email||
+      !password||!name||!confirmPassword){
         res.sendStatus(422)
         return
     }
@@ -31,6 +32,10 @@ export async function signUpValidation(req,res,next){
 
 export async function signInValidation(req,res,next){
     const {email,password} = req.body
+    if(!email|| !password){
+      res.sendStatus(422)
+      return
+    }
     try{
         const {rows} = await connectionDB.query("SELECT * FROM users WHERE email =$1",[email])
         if(rows.length===0){
@@ -38,7 +43,7 @@ export async function signInValidation(req,res,next){
             return
         }
         console.log(email)      
-         if(!bcrypt.compareSync(password,rows[0].password)){
+         if(!bcrypt.compareSync(password.toString(),rows[0].password)){
             console.log(req.body)
             return res.sendStatus(401)
         }
@@ -77,4 +82,32 @@ export async function usersMeValidation(req,res,next){
       return
     }
     next()
+}
+
+export async function logoutUserValidation(req,res,next){
+  const {authorization} = req.headers
+
+  if(!authorization?.includes("Bearer")){
+    res.sendStatus(401)
+    return
+}
+
+try{
+  const sessions = await connectionDB.query("SELECT * FROM sessions WHERE token =$1",[token])
+  if(sessions.rows.length===0){
+      res.sendStatus(401)
+      return
+  }
+  const {rows} = await connectionDB.query("SELECT * FROM users WHERE id =$1",[sessions.rows[0].userId])
+  if(rows.length===0){
+    res.sendStatus(404)
+    return
+  }
+  console.log(rows)
+}
+  catch (err) {
+    res.status(500).send(err.message);
+    return
+  }
+  next()
 }
